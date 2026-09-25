@@ -1,0 +1,29 @@
+# PlatformIO build artifacts and downloaded packages
+.pio/
+
+# Local Python environment used for PlatformIO
+.venv/
+
+# Generated firmware images
+sd-app0-rebuilt.bin
+sd-factory-rebuilt.bin
+flash-backup.bin
+
+# Editor-generated files
+.idea/
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch/
+
+# Python and temporary files
+__pycache__/
+*.py[cod]
+*.log
+*~
+*.swp
+*.swo
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
