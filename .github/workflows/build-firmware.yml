@@ -28,23 +28,23 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.value }}
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Restore PlatformIO packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.platformio
           key: platformio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
@@ -89,7 +89,7 @@ jobs:
           )
 
       - name: Upload firmware images
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: esp32s3-firmware-${{ steps.version.outputs.value }}
           if-no-files-found: error
@@ -99,13 +99,13 @@ jobs:
   release:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
     steps:
       - name: Download firmware images
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: esp32s3-firmware-${{ needs.build.outputs.version }}
           path: release
