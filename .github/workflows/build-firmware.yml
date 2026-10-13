@@ -63,7 +63,6 @@ jobs:
 
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             [[ "$GITHUB_REF_NAME" == "v$version" ]]
-            [[ "$(git cat-file -t "$GITHUB_REF")" == tag ]]
           else
             version="$version-dev.${GITHUB_SHA::12}"
           fi
