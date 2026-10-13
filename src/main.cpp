@@ -6,6 +6,14 @@
 
 #include "Epaper13in3e.h"
 
+#ifndef FIRMWARE_VERSION
+#define FIRMWARE_VERSION "unknown"
+#endif
+
+#ifndef FIRMWARE_GIT_SHA
+#define FIRMWARE_GIT_SHA "unknown"
+#endif
+
 namespace {
 
 constexpr uint8_t kSdSck = 8;
@@ -116,6 +124,11 @@ bool initializeSdCard() {
 void setup() {
     Serial.begin(115200);
     delay(1000);
+
+    Serial.print("Firmware version: ");
+    Serial.println(FIRMWARE_VERSION);
+    Serial.print("Firmware revision: ");
+    Serial.println(FIRMWARE_GIT_SHA);
 
     epaper::begin();
     sdReady = initializeSdCard();

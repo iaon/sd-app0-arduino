@@ -1,0 +1,120 @@
+name: Build firmware
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+    paths:
+      - 'src/**'
+      - 'scripts/build-release.sh'
+      - 'scripts/version_flags.py'
+      - 'platformio.ini'
+      - 'VERSION'
+      - '.github/workflows/build-firmware.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/build-release.sh'
+      - 'scripts/version_flags.py'
+      - 'platformio.ini'
+      - 'VERSION'
+      - '.github/workflows/build-firmware.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Restore PlatformIO packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: platformio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            platformio-${{ runner.os }}-
+
+      - name: Install PlatformIO
+        run: python -m pip install 'platformio==6.2.0'
+
+      - name: Determine firmware version
+        id: version
+        shell: bash
+        run: |
+          version="$(tr -d '\r\n' < VERSION)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            [[ "$GITHUB_REF_NAME" == "v$version" ]]
+            [[ "$(git cat-file -t "$GITHUB_REF")" == tag ]]
+          else
+            version="$version-dev.${GITHUB_SHA::12}"
+          fi
+
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build release images
+        env:
+          FIRMWARE_GIT_SHA: ${{ github.sha }}
+          FIRMWARE_VERSION: ${{ steps.version.outputs.value }}
+        run: PIO=pio scripts/build-release.sh
+
+      - name: Package firmware
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          mkdir -p dist
+          cp .pio/build/esp32s3/firmware.bin "dist/firmware-${VERSION}.bin"
+          cp sd-factory-rebuilt.bin "dist/sd-factory-rebuilt-${VERSION}.bin"
+          (
+            cd dist
+            sha256sum *.bin > SHA256SUMS
+          )
+
+      - name: Upload firmware images
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32s3-firmware-${{ steps.version.outputs.value }}
+          if-no-files-found: error
+          path: |
+            dist/
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download firmware images
+        uses: actions/download-artifact@v4
+        with:
+          name: esp32s3-firmware-${{ needs.build.outputs.version }}
+          path: release
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" release/*.bin release/SHA256SUMS \
+            --title "$TAG" \
+            --generate-notes

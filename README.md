@@ -127,6 +127,27 @@ This creates:
 The release script merges the bootloader, partition table, OTA metadata
 helper, and application, then extends the result to exactly 4194304 bytes.
 
+## Firmware versions and releases
+
+`VERSION` is the source of truth for the next stable firmware version and
+uses `MAJOR.MINOR.PATCH` semantic versioning. Local and branch builds embed a
+traceable development version such as `0.1.0-dev.a1b2c3d4e5f6`; a clean Git
+tag `v0.1.0` embeds `0.1.0`.
+
+The firmware prints its version and Git revision on the serial console during
+startup. To make a release, update `VERSION`, commit the change, and push the
+matching annotated Git tag:
+
+```sh
+git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin v0.1.0
+```
+
+The GitHub Actions workflow verifies that the tag matches `VERSION`, builds
+the images, records their SHA-256 checksums, and publishes a GitHub Release.
+Release assets are named `firmware-<version>.bin` and
+`sd-factory-rebuilt-<version>.bin`; the latter is a complete 4 MB flash image.
+
 ### Checksums of the verified build
 
 These checksums identify the already generated files in this directory:

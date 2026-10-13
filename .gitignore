@@ -1,5 +1,6 @@
 # PlatformIO build artifacts and downloaded packages
 .pio/
+.platformio/
 
 # Local Python environment used for PlatformIO
 .venv/
@@ -7,6 +8,7 @@
 # Generated firmware images
 sd-app0-rebuilt.bin
 sd-factory-rebuilt.bin
+dist/
 flash-backup.bin
 
 # Editor-generated files
